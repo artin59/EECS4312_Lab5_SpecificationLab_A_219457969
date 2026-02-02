@@ -68,4 +68,70 @@ def test_lunch_break_blocks_all_slots_during_lunch():
     assert "12:30" not in slots
     assert "12:45" not in slots
 
-"""TODO: Add at least 5 additional test cases to test your implementation."""
+def test_meeting_must_fully_fit_before_5pm():
+    """
+    Constraint:
+    A meeting must fully fit within working hours (09:00–17:00).
+    """
+    events = []
+    slots = suggest_slots(events, meeting_duration=60, day="2026-02-01")
+
+    assert "16:00" in slots      # 16:00–17:00 fits
+    assert "16:15" not in slots  # 16:15–17:15 exceeds work hours
+
+def test_back_to_back_event_requires_buffer():
+    """
+    Constraint:
+    Meetings cannot start immediately after an event (15-minute buffer required).
+    """
+    events = [{"start": "10:00", "end": "11:00"}]
+    slots = suggest_slots(events, meeting_duration=30, day="2026-02-01")
+
+    assert "11:00" not in slots
+    assert "11:15" in slots
+
+def test_event_overlapping_lunch_extends_blocking():
+    """
+    Constraint:
+    Events overlapping lunch still enforce buffer beyond their end.
+    """
+    events = [{"start": "11:30", "end": "12:30"}]
+    slots = suggest_slots(events, meeting_duration=30, day="2026-02-01")
+
+    assert "12:45" not in slots  # 12:30 + 15 buffer
+    assert "13:00" in slots
+
+def test_event_partially_outside_working_hours():
+    """
+    Constraint:
+    Events partially overlapping working hours must still block availability.
+    """
+    events = [{"start": "08:30", "end": "09:30"}]
+    slots = suggest_slots(events, meeting_duration=30, day="2026-02-01")
+
+    assert "09:00" not in slots
+    assert "09:30" not in slots
+    assert "09:45" in slots
+
+def test_no_available_slots_returns_empty_list():
+    """
+    Functional requirement:
+    Return an empty list when no valid meeting times exist.
+    """
+    events = [{"start": "09:00", "end": "17:00"}]
+    slots = suggest_slots(events, meeting_duration=30, day="2026-02-01")
+
+    assert slots == []
+
+def test_slots_are_returned_in_ascending_order():
+    """
+    Functional requirement:
+    Output must be sorted in ascending time order.
+    """
+    events = [
+        {"start": "14:00", "end": "15:00"},
+        {"start": "09:00", "end": "10:00"},
+    ]
+    slots = suggest_slots(events, meeting_duration=30, day="2026-02-01")
+
+    assert slots == sorted(slots)

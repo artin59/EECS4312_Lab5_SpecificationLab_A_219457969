@@ -381,3 +381,123 @@ Show how to refactor overlap logic more elegantly
 Help you anticipate hidden edge cases
 
 Just say 👌
+
+--------------------------------------------------
+Prompt 3: "Copy paste your question"
+now based on the correct solution and requirements give me 6 test cases to add using pytest, for one of the test cases i want you to test if the final output is in ascending order as in the requirements or not. Make sure to cover all system requirements not already tested
+LLM Response 3: "Copy paste LLMs response"
+Nice, this is exactly how you harden a solution 👍
+Below are 6 additional pytest test cases that:
+
+Do not duplicate the existing public tests
+
+Explicitly cover remaining system requirements
+
+Include one test that verifies ascending order
+
+Are consistent with the corrected implementation (15-min buffer, lunch rule, working hours, etc.)
+
+I’ll also annotate what each test is validating so it’s clear why it exists.
+
+✅ Additional pytest test cases
+def test_meeting_must_fully_fit_before_5pm():
+    """
+    Constraint:
+    A meeting must fully fit within working hours (09:00–17:00).
+    """
+    events = []
+    slots = suggest_slots(events, meeting_duration=60, day="2026-02-01")
+
+    assert "16:00" in slots      # 16:00–17:00 fits
+    assert "16:15" not in slots  # 16:15–17:15 exceeds work hours
+
+def test_back_to_back_event_requires_buffer():
+    """
+    Constraint:
+    Meetings cannot start immediately after an event (15-minute buffer required).
+    """
+    events = [{"start": "10:00", "end": "11:00"}]
+    slots = suggest_slots(events, meeting_duration=30, day="2026-02-01")
+
+    assert "11:00" not in slots
+    assert "11:15" in slots
+
+def test_event_overlapping_lunch_extends_blocking():
+    """
+    Constraint:
+    Events overlapping lunch still enforce buffer beyond their end.
+    """
+    events = [{"start": "11:30", "end": "12:30"}]
+    slots = suggest_slots(events, meeting_duration=30, day="2026-02-01")
+
+    assert "12:45" not in slots  # 12:30 + 15 buffer
+    assert "13:00" in slots
+
+def test_event_partially_outside_working_hours():
+    """
+    Constraint:
+    Events partially overlapping working hours must still block availability.
+    """
+    events = [{"start": "08:30", "end": "09:30"}]
+    slots = suggest_slots(events, meeting_duration=30, day="2026-02-01")
+
+    assert "09:00" not in slots
+    assert "09:30" not in slots
+    assert "09:45" in slots
+
+def test_no_available_slots_returns_empty_list():
+    """
+    Functional requirement:
+    Return an empty list when no valid meeting times exist.
+    """
+    events = [{"start": "09:00", "end": "17:00"}]
+    slots = suggest_slots(events, meeting_duration=30, day="2026-02-01")
+
+    assert slots == []
+
+def test_slots_are_returned_in_ascending_order():
+    """
+    Functional requirement:
+    Output must be sorted in ascending time order.
+    """
+    events = [
+        {"start": "14:00", "end": "15:00"},
+        {"start": "09:00", "end": "10:00"},
+    ]
+    slots = suggest_slots(events, meeting_duration=30, day="2026-02-01")
+
+    assert slots == sorted(slots)
+
+🧠 Coverage checklist (what’s now fully tested)
+Requirement	Covered
+Working hours enforcement	✅
+Meeting must fully fit	✅
+15-minute granularity	✅
+Event overlap blocking	✅
+Mandatory buffer after events	✅
+Lunch break rule	✅
+Events outside working hours	✅
+Partial overlap with working hours	✅
+Unsorted events	✅
+Empty availability case	✅
+Ascending output order	✅
+🏁 Result
+
+With these tests added:
+
+Your solution is well-specified
+
+Hidden edge cases are much less likely to fail
+
+Your test suite now reflects real scheduling logic, not just happy paths
+
+If you want, I can:
+
+Convert these into parameterized pytest tests
+
+Predict hidden autograder cases
+
+Help you write a formal test justification section
+
+Just say the word 🚀
+--------------------------------------------------
