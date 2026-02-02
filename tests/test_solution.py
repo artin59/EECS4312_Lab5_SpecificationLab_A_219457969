@@ -1,5 +1,5 @@
-## Student Name:
-## Student ID: 
+## Student Name: Artin Kiany
+## Student ID: 219457969
 
 """
 Public test suite for the meeting slot suggestion exercise.
@@ -9,7 +9,12 @@ The hidden test suite used for grading contains additional edge cases and will n
 available to students.
 """
 import pytest
-from solution import suggest_slots
+import sys
+import os
+
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+
+from src.solution import suggest_slots
 
 
 def test_single_event_blocks_overlapping_slots():
