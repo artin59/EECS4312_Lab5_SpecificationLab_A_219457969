@@ -501,3 +501,80 @@ Help you write a formal test justification section
 
 Just say the word 🚀
 --------------------------------------------------
+
+give me 5 invariants that must hold in the entire system. Then give me 2 negative requirements (situations that must not occure)
+
+Nice — this is exactly the right level of thinking for a scheduling system 👍
+Below are clear, system-level invariants followed by negative requirements, phrased in a way that would be acceptable in a lab report or design doc.
+
+✅ System Invariants (must always hold)
+Invariant 1 — Working-hours validity
+
+Every returned meeting start time must be within working hours [09:00, 17:00), and the meeting must fully complete by 17:00.
+
+No suggested slot may cause a meeting to start before 09:00 or end after 17:00.
+
+Invariant 2 — Time granularity
+
+All suggested meeting start times must align to 15-minute intervals.
+
+Valid start times are exactly of the form HH:00, HH:15, HH:30, or HH:45.
+
+Invariant 3 — Event non-overlap
+
+No suggested meeting may overlap in time with any existing event, including the mandatory 15-minute buffer after each event.
+
+For every suggested slot, the interval [start, start + duration) must not intersect any event interval extended by the buffer.
+
+Invariant 4 — Lunch break restriction
+
+No meeting may start during the lunch break period 12:00–13:00.
+
+All suggested start times must satisfy start < 12:00 or start ≥ 13:00.
+
+Invariant 5 — Sorted output
+
+The list of suggested meeting start times must always be returned in strictly ascending chronological order.
+
+For any indices i < j, slots[i] ≤ slots[j].
+
+❌ Negative Requirements (must never occur)
+Negative Requirement 1 — No back-to-back scheduling
+
+The system must not suggest a meeting that starts immediately at the end of an event.
+
+A meeting start time equal to an event’s end time is invalid unless the required buffer has elapsed.
+
+Negative Requirement 2 — No invalid suggestions
+
+The system must not return:
+
+Overlapping meetings
+
+Meetings during lunch
+
+Meetings outside working hours
+
+Meetings that exceed working hours
+
+If no valid time exists, the system must return an empty list, not invalid times.
+
+🧠 Why these matter
+
+These invariants:
+
+Encode correctness guarantees
+
+Make hidden test expectations explicit
+
+Define behavior independent of implementation
+
+If you want, I can:
+
+Convert these into formal assertions
+
+Map each invariant directly to a test
+
+Help you write them in formal software specification language
+
+Just let me know 👌
