@@ -27,14 +27,6 @@ def suggest_slots(
 ) -> List[str]:
     """
     Suggest possible meeting start times for a given day.
-
-    Args:
-        events: List of dicts with keys {"start": "HH:MM", "end": "HH:MM"}
-        meeting_duration: Desired meeting length in minutes
-        day: Three-letter day abbreviation (e.g., "Mon", "Tue", ... "Fri")
-
-    Returns:
-        List of valid start times as "HH:MM" sorted ascending
     """
 
     WORK_START = 9 * 60      # 09:00
@@ -43,6 +35,7 @@ def suggest_slots(
     LUNCH_END = 13 * 60      # 13:00
     STEP = 15                # 15-minute granularity
     BUFFER = 15              # mandatory gap after events
+    FRIDAY_CUTOFF = 15 * 60  # 15:00
 
     # Convert events to minutes and ignore ones fully outside work hours
     event_ranges = []
@@ -62,6 +55,10 @@ def suggest_slots(
         if end > WORK_END:
             continue
 
+        # Friday-specific restriction
+        if day == "Fri" and start > FRIDAY_CUTOFF:
+            continue
+
         # Cannot start during lunch break
         if LUNCH_START <= start < LUNCH_END:
             continue
@@ -77,5 +74,3 @@ def suggest_slots(
             valid_slots.append(to_time_str(start))
 
     return valid_slots
-
-
