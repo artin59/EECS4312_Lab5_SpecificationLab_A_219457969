@@ -29,6 +29,10 @@ def suggest_slots(
     Suggest possible meeting start times for a given day.
     """
 
+    # NEW: Weekend restriction
+    if day in {"Sat", "Sun"}:
+        return []
+
     WORK_START = 9 * 60      # 09:00
     WORK_END = 17 * 60       # 17:00
     LUNCH_START = 12 * 60    # 12:00
