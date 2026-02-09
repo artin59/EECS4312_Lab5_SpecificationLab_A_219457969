@@ -135,3 +135,56 @@ def test_slots_are_returned_in_ascending_order():
     slots = suggest_slots(events, meeting_duration=30, day="2026-02-01")
 
     assert slots == sorted(slots)
+
+def test_no_meetings_on_saturday():
+    """
+    Functional requirement:
+    The system must not suggest meetings on weekends.
+    """
+    events = []
+    slots = suggest_slots(events, meeting_duration=30, day="Sat")
+
+    assert slots == []
+
+def test_no_meetings_on_sunday_even_with_no_events():
+    """
+    Functional requirement:
+    Weekend restriction applies regardless of event availability.
+    """
+    events = [{"start": "10:00", "end": "11:00"}]
+    slots = suggest_slots(events, meeting_duration=30, day="Sun")
+
+    assert slots == []
+
+def test_friday_allows_meeting_starting_at_1500():
+    """
+    Edge case:
+    Meetings starting exactly at 15:00 on Friday are allowed.
+    """
+    events = []
+    slots = suggest_slots(events, meeting_duration=30, day="Fri")
+
+    assert "15:00" in slots
+
+def test_friday_excludes_meetings_after_1500():
+    """
+    Functional requirement:
+    Meetings starting after 15:00 on Friday must be excluded.
+    """
+    events = []
+    slots = suggest_slots(events, meeting_duration=30, day="Fri")
+
+    assert "15:15" not in slots
+    assert "16:00" not in slots
+
+def test_friday_cutoff_overrides_other_constraints():
+    """
+    Edge case:
+    Even if a slot satisfies all other constraints, it must be excluded
+    if it violates the Friday cutoff.
+    """
+    events = [{"start": "13:00", "end": "14:00"}]
+    slots = suggest_slots(events, meeting_duration=30, day="Fri")
+
+    assert "15:15" not in slots
+
