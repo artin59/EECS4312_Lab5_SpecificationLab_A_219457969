@@ -1,6 +1,8 @@
 ## Student Name: Artin Kiany
 ## Student ID:  219457969
+ 
 
+# New requirement lab 6
 """
 Stub file for the meeting slot suggestion exercise.
 
