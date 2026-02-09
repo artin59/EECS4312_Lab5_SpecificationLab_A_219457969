@@ -188,3 +188,67 @@ def test_friday_cutoff_overrides_other_constraints():
 
     assert "15:15" not in slots
 
+def test_event_ending_near_workday_end_blocks_buffer_past_5pm():
+    """
+    Edge case:
+    Buffer after an event must not allow slots beyond working hours.
+    """
+    events = [{"start": "16:50", "end": "17:00"}]
+    slots = suggest_slots(events, meeting_duration=15, day="2026-02-03")
+
+    assert "17:00" not in slots
+    assert "16:45" not in slots
+
+
+def test_meeting_crossing_into_lunch_is_not_allowed():
+    """
+    Edge case:
+    Meetings that start before lunch but overlap lunch should not be suggested.
+    """
+    events = []
+    slots = suggest_slots(events, meeting_duration=60, day="2026-02-04")
+
+    assert "11:30" not in slots
+    assert "11:45" not in slots
+    assert "11:00" in slots
+
+
+def test_overlapping_event_buffers_block_all_intermediate_slots():
+    """
+    Edge case:
+    Buffers from adjacent events must combine to block intermediate slots.
+    """
+    events = [
+        {"start": "10:00", "end": "10:30"},
+        {"start": "10:45", "end": "11:15"},
+    ]
+    slots = suggest_slots(events, meeting_duration=15, day="2026-02-05")
+
+    assert "10:30" not in slots
+    assert "10:45" not in slots
+    assert "11:00" not in slots
+    assert "11:30" in slots
+
+
+def test_zero_duration_meeting_returns_empty_list():
+    """
+    Edge case:
+    Zero-length meetings should not produce valid slots.
+    """
+    events = []
+    slots = suggest_slots(events, meeting_duration=0, day="2026-02-06")
+
+    assert slots == []
+
+
+def test_weekend_day_returns_no_slots():
+    """
+    Edge case:
+    System must not suggest meetings on weekends.
+    """
+    events = []
+    slots_sat = suggest_slots(events, meeting_duration=30, day="Sat")
+    slots_sun = suggest_slots(events, meeting_duration=30, day="Sun")
+
+    assert slots_sat == []
+    assert slots_sun == []

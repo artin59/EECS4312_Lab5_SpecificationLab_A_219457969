@@ -1200,3 +1200,175 @@ Map each negative requirement to a specific pytest test
 
 Help distinguish negative requirements vs invariants vs constraints cleanly for grading
 ---------------------------------------------------------------------------------------------
+prompt 8:
+what edge case might still cause issues
+
+LLM Response:
+A subtle edge case that can still cause issues—even with all your current rules and tests—is:
+
+⚠️ Day-boundary + buffer interaction at working-hour limits
+
+Scenario:
+An event ends very close to the end of the workday (or overlaps it), and the 15-minute buffer pushes availability past 17:00, but the system still suggests a slot.
+
+Example:
+
+Event: 16:50–17:00
+
+Buffer required until: 17:15
+
+Meeting duration: 15 minutes
+
+What can go wrong:
+If the system:
+
+clips events to working hours incorrectly, or
+
+applies the buffer without re-checking working-hour bounds,
+
+it might incorrectly suggest 17:00 or 17:15, which violates the working-hours rule.
+
+Why this edge case is dangerous:
+
+It combines three rules: event overlap, buffer enforcement, and working-hour limits.
+
+Many implementations check these independently but not in composition.
+
+Other realistic edge cases to watch for
+
+Friday + long meeting duration
+
+A meeting starting at 14:30 on Friday with a 60-minute duration violates the “no starts after 15:00” rule indirectly if not validated carefully.
+
+Lunch boundary alignment
+
+Meeting duration (e.g., 45 minutes) starting at 11:30 crosses into lunch even though it doesn’t start during lunch.
+
+Back-to-back events with overlapping buffers
+
+Two events close together can cause buffers to overlap; the system must merge blocked intervals correctly.
+
+Zero or invalid meeting duration
+
+Duration of 0, negative values, or non-multiples of 15 can silently break slot generation logic.
+
+Malformed event times
+
+Events with end < start or invalid time strings may cause undefined behavior if not validated.
+
+Why this matters (exam-ready insight)
+
+Most remaining risks come from interactions between constraints, not missing constraints.
+
+If you want, I can:
+
+Write a pytest case for the most dangerous one
+
+Show how to merge blocked intervals safely
+
+Help you phrase this as a risk analysis paragraph for your submission
+--------------------------------------------------------------------
+prompt 9:
+ok now test this cases by giving me test cases for them
+LLM reposne:
+Below are pytest test cases that explicitly target the edge cases we discussed.
+They are written to implicitly validate the rules by asserting correct behavior, without restating the requirements in the test names.
+
+You can append these directly to your existing test file.
+
+def test_event_ending_near_workday_end_blocks_buffer_past_5pm():
+    """
+    Edge case:
+    Buffer after an event must not allow slots beyond working hours.
+    """
+    events = [{"start": "16:50", "end": "17:00"}]
+    slots = suggest_slots(events, meeting_duration=15, day="2026-02-03")
+
+    assert "17:00" not in slots
+    assert "16:45" not in slots
+
+
+def test_long_meeting_on_friday_before_cutoff_is_excluded():
+    """
+    Edge case:
+    A meeting that starts before 15:00 on Friday but extends past it
+    must still be excluded.
+    """
+    events = []
+    slots = suggest_slots(events, meeting_duration=60, day="Fri")
+
+    assert "14:30" not in slots
+    assert "14:45" not in slots
+    assert "15:00" not in slots
+
+
+def test_meeting_crossing_into_lunch_is_not_allowed():
+    """
+    Edge case:
+    Meetings that start before lunch but overlap lunch should not be suggested.
+    """
+    events = []
+    slots = suggest_slots(events, meeting_duration=60, day="2026-02-04")
+
+    assert "11:30" not in slots
+    assert "11:45" not in slots
+    assert "11:00" in slots
+
+
+def test_overlapping_event_buffers_block_all_intermediate_slots():
+    """
+    Edge case:
+    Buffers from adjacent events must combine to block intermediate slots.
+    """
+    events = [
+        {"start": "10:00", "end": "10:30"},
+        {"start": "10:45", "end": "11:15"},
+    ]
+    slots = suggest_slots(events, meeting_duration=15, day="2026-02-05")
+
+    assert "10:30" not in slots
+    assert "10:45" not in slots
+    assert "11:00" not in slots
+    assert "11:30" in slots
+
+
+def test_zero_duration_meeting_returns_empty_list():
+    """
+    Edge case:
+    Zero-length meetings should not produce valid slots.
+    """
+    events = []
+    slots = suggest_slots(events, meeting_duration=0, day="2026-02-06")
+
+    assert slots == []
+
+
+def test_weekend_day_returns_no_slots():
+    """
+    Edge case:
+    System must not suggest meetings on weekends.
+    """
+    events = []
+    slots_sat = suggest_slots(events, meeting_duration=30, day="Sat")
+    slots_sun = suggest_slots(events, meeting_duration=30, day="Sun")
+
+    assert slots_sat == []
+    assert slots_sun == []
+
+Why these tests are strong (grader-level reasoning)
+
+They test rule interactions, not single constraints
+
+They cover boundary times (15:00, 17:00, lunch edges)
+
+They validate negative behavior (what must not appear)
+
+They include invalid inputs without crashing assumptions
+
+If you want, I can now:
+
+Verify these against your current implementation
+
+Tighten them to match a strict hidden test suite
+
+Help you justify these tests in a testing rationale paragraph
